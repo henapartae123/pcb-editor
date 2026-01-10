@@ -1,0 +1,124 @@
+-Engine & Architecture
+    --Initialize Three.js manually inside React (useEffect + useRef) #
+
+    --Single requestAnimationFrame render loop
+
+    --Centralized Engine module (Engine.ts)
+
+    --Proper resize handling
+
+    --Strict cleanup:
+
+        -- .dispose() geometries
+
+        -- .dispose() materials
+
+        -- renderer.dispose()
+
+        -- Scene object removal
+
+-Board & Layering
+
+    --Parametric PCB Board (BoxGeometry)
+
+    --Layer system (Top / Bottom Copper)
+
+    --Z-fighting mitigation:
+
+    --polygonOffset OR
+
+    --deterministic Z-spacing
+
+-PCB Primitives
+
+    --InstancedMesh for SMD pads (100+)
+
+    --Rectangular + circular pad support
+
+    --Through-hole cylinders
+
+    --Traces as flat manifold geometry
+
+        --Shape → ExtrudeGeometry
+
+        --Width respected
+
+-Shader System (MANDATORY)
+
+    -- Single ShaderMaterial for all copper
+
+    -- Brushed copper OR solder mask effect
+
+    -- uHovered uniform
+
+    -- uSelected uniform
+
+    -- Edge rendering:
+
+        --EdgesGeometry OR barycentric wireframe
+
+-Interaction
+
+    --Raycaster-based picking
+
+    --Hover detection
+
+    --Cursor change on hover
+
+    --Shader highlight on hover
+
+    --Selection on click
+
+    --TransformControls:
+
+        --Movement constrained to XZ plane
+
+-React UI Sync
+
+    --Sidebar with:
+
+        --Component ID
+
+        --World coordinates
+
+        --Surface area
+
+    --Live sync during transform
+
+-Persistence
+
+    --Export PCB state → JSON schema
+
+    --Load JSON → full board reconstruction
+
+    --Deterministic hydration
+
+🟡 MEDIUM PRIORITY (Strong Senior Signal)
+
+Do these if time allows — they elevate your submission.
+
+    --Layer visibility toggles
+
+    --Component grouping
+
+    --Hover priority (pads > traces)
+
+    --Subtle copper animation (time-based shader)
+
+    --README diagrams
+
+    --Memory baseline test using renderer.info.memory
+
+🟢 LOW PRIORITY (Optional / Bonus)
+
+Only touch these if everything else is DONE.
+
+    --Custom wireframe shader
+
+    --Grid snapping
+
+    --Undo/redo
+
+    --Advanced PCB visuals (silkscreen text)
+
+    --Physics engine
