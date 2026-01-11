@@ -8,7 +8,7 @@ export function exportPCB(engineState: any, boardConfig: any): string {
     components.push({
       id: comp.id,
       type: comp.type,
-      layer: comp.layer,
+      layer: comp.layer ?? (comp.type === "pad" ? "top" : "board"),
       position: [
         comp.mesh.position.x,
         comp.mesh.position.y,
@@ -36,4 +36,5 @@ export function downloadPCB(json: string) {
   a.href = URL.createObjectURL(blob);
   a.download = "pcb-layout.json";
   a.click();
+  URL.revokeObjectURL(a.href);
 }

@@ -17,7 +17,7 @@ interface SidebarProps {
   };
   onExport?: () => void;
   onClear?: () => void;
-  // onLoad?: () => void;
+  onLoad?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   boardConfig = { width: 100, height: 80, thickness: 1.6 },
   onExport = () => {},
   onClear = () => {},
-  // onLoad = () => {},
+  onLoad = () => {},
 }) => {
   const calculateArea = (): number => {
     if (!selectedComponent) return 0;
@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* PCB Controls */}
-      <div
+      {/* <div
         style={{
           marginBottom: "20px",
           paddingBottom: "15px",
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           Trace Width
         </label>
         <input type="number" step="0.1" defaultValue={0.6} style={inputStyle} />
-      </div>
+      </div> */}
 
       {/* Component Count */}
       <div
@@ -294,7 +294,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           📥 Export JSON
         </button>
 
-        {/* <button
+        <button
           onClick={onLoad}
           style={{
             padding: "12px",
@@ -317,7 +317,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           📤 Load JSON
-        </button> */}
+        </button>
 
         <button
           onClick={onClear}

@@ -13,6 +13,7 @@ import { createBoard } from "../pcb/Board";
 import { createThroughHole } from "../pcb/Holes";
 import { createManhattanTrace } from "../pcb/Traces";
 import { setGlobalEngineState } from "../App";
+import { createCopperMaterial } from "../shaders/createCopperMaterial";
 
 const BOARD = { w: 100, h: 80, t: 1.6 };
 
@@ -64,11 +65,7 @@ export function useEngine(
     scene.add(board.mesh);
 
     /* ---------- PADS ---------- */
-    const padMat = new THREE.MeshStandardMaterial({
-      color: 0xd4af37,
-      metalness: 1,
-      roughness: 0.25,
-    });
+    const padMat = createCopperMaterial();
 
     const pads: THREE.Mesh[] = [];
 
@@ -252,7 +249,15 @@ export function useEngine(
     };
     animate();
 
-    engineRef.current = { scene, camera, renderer };
+    engineRef.current = {
+      scene,
+      camera,
+      renderer,
+      components,
+      traces,
+      pads,
+      holes,
+    };
     setGlobalEngineState(engineRef.current);
 
     return () => {

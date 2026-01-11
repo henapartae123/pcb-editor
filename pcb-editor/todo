@@ -45,13 +45,13 @@
 
 -Shader System (MANDATORY)
 
-    -- Single ShaderMaterial for all copper
+    -- Single ShaderMaterial for all copper #
 
-    -- Brushed copper OR solder mask effect
+    -- Brushed copper OR solder mask effect  #
 
-    -- uHovered uniform
+    -- uHovered uniform 
 
-    -- uSelected uniform
+    -- uSelected uniform 
 
     -- Edge rendering:
 

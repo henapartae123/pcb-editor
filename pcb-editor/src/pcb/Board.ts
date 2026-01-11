@@ -4,7 +4,7 @@ export function createBoard(width: number, height: number, thickness: number) {
   const geometry = new THREE.BoxGeometry(width, thickness, height);
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0x00ff4444,
+    color: 0x00008c4a,
     roughness: 0.6,
     metalness: 0.5,
   });
