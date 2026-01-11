@@ -77,19 +77,19 @@
 
     --Sidebar with:
 
-        --Component ID
+        --Component ID #
 
-        --World coordinates
+        --World coordinates ##
 
-        --Surface area
+        --Surface area #
 
     --Live sync during transform
 
 -Persistence
 
-    --Export PCB state → JSON schema
+    --Export PCB state → JSON schema #
 
-    --Load JSON → full board reconstruction
+    --Load JSON → full board reconstruction #
 
     --Deterministic hydration
 

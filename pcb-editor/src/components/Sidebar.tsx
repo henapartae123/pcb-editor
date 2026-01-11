@@ -41,15 +41,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
   const pos = selectedComponent?.position;
 
-  const inputStyle = {
-    width: "100%",
-    padding: "6px",
-    background: "rgba(0,0,0,0.4)",
-    border: "1px solid rgba(255,255,255,0.2)",
-    borderRadius: "4px",
-    color: "#fff",
-    fontFamily: "monospace",
-  };
+  // const inputStyle = {
+  //   width: "100%",
+  //   padding: "6px",
+  //   background: "rgba(0,0,0,0.4)",
+  //   border: "1px solid rgba(255,255,255,0.2)",
+  //   borderRadius: "4px",
+  //   color: "#fff",
+  //   fontFamily: "monospace",
+  // };
 
   return (
     <div
