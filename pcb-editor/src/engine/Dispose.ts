@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from "three";
 
 export function disposeObject(obj: THREE.Object3D) {

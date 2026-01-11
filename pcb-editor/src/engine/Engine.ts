@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { TransformControls } from "three-stdlib";
@@ -167,7 +168,6 @@ export function useEngine(
           path,
           width: ROUTING.width,
           y: LAYERS.TOP + 0.002,
-          rounded: true,
         });
 
         scene.add(mesh);
@@ -180,15 +180,14 @@ export function useEngine(
     /* ---------- TRANSFORM CONTROLS ---------- */
     const transform = new TransformControls(camera, renderer.domElement);
     transform.setMode("translate");
-    transform.showY = false;
     scene.add(transform);
 
-    transform.addEventListener("objectChange", () => {
-      if (!transform.object) return;
-      transform.object.position.y =
-        transform.object.type === "Group" ? 0 : LAYERS.TOP;
-      routeAll();
-    });
+    // transform.addEventListener("objectChange", () => {
+    //   if (!transform.object) return;
+    //   transform.object.position.y =
+    //     transform.object.type === "Group" ? 0 : LAYERS.TOP;
+    //   routeAll();
+    // });
 
     /* ---------- PICKING ---------- */
     const updateMouse = (e: MouseEvent) => {

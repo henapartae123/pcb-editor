@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     return 0;
   };
-  const pos = selectedComponent?.mesh?.position;
+  const pos = selectedComponent?.position;
 
   const inputStyle = {
     width: "100%",
