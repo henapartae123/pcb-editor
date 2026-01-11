@@ -1,5 +1,4 @@
 import { createBoard } from "../pcb/Board";
-import { createSMDPads } from "../pcb/Pads";
 
 export function loadPCB(engineState: any, jsonString: string) {
   try {
@@ -28,23 +27,6 @@ export function loadPCB(engineState: any, jsonString: string) {
       layer: "substrate",
       ...board,
     });
-
-    // --- Recreate pads (example) ---
-    const padComponents = data.components.filter(
-      (c: any) => c.type === "smd_rect"
-    );
-
-    if (padComponents.length) {
-      const pads1 = createSMDPads({1});
-      engineState.scene.add(pads1.mesh);
-
-      engineState.components.set("pads", {
-        id: "pads",
-        type: "smd_pad",
-        layer: "top",
-        ...pads1,
-      });
-    }
 
     return {
       success: true,
