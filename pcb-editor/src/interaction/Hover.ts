@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // interaction/Hover.ts
 import * as THREE from "three";
 

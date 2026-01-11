@@ -31,7 +31,7 @@ const snap = (v: number) => Math.round(v / ROUTING.grid) * ROUTING.grid;
 const snapRelative = (v: number) => snap(v + BOARD.w) - BOARD.w;
 
 export function useEngine(
-  containerRef: React.RefObject<HTMLDivElement>,
+  containerRef: React.RefObject<HTMLDivElement | null>,
   onSelectionChange?: (data: any | null) => void
 ) {
   const engineRef = useRef<any>(null);

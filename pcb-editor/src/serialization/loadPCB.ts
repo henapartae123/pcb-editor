@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createBoard } from "../pcb/Board";
 
 export function loadPCB(engineState: any, jsonString: string) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function exportPCB(engineState: any, boardConfig: any): string {
   const components: any[] = [];
 
