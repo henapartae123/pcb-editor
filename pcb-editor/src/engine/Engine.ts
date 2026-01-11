@@ -182,14 +182,29 @@ export function useEngine(
     transform.setMode("translate");
     scene.add(transform);
 
-    // transform.addEventListener("objectChange", () => {
-    //   if (!transform.object) return;
-    //   transform.object.position.y =
-    //     transform.object.type === "Group" ? 0 : LAYERS.TOP;
-    //   routeAll();
-    // });
+    // Listen to object moves and update routing
+    (transform as any).addEventListener("objectChange", () => {
+      const obj = (transform as any).object as THREE.Object3D | null;
+      if (!obj) return;
 
-    /* ---------- PICKING ---------- */
+      // Snap Y to layer
+      obj.position.y = LAYERS.TOP;
+
+      // Snap X and Z to routing grid
+      obj.position.x = snap(obj.position.x);
+      obj.position.z = snap(obj.position.z);
+
+      // Recalculate all routing traces
+      routeAll();
+
+      // Update selection callback
+      if (onSelectionChange) {
+        const c = components.get(obj.uuid);
+        onSelectionChange(c || null);
+      }
+    });
+
+    /* ---------- PICKING --c-------- */
     const updateMouse = (e: MouseEvent) => {
       const r = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
