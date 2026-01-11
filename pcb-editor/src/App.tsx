@@ -5,6 +5,7 @@ import { exportPCB, downloadPCB } from "./serialization/exportPCB";
 // import { loadPCB } from "./serialization/loadPCB";
 
 let globalEngineState: any = null;
+// eslint-disable-next-line react-refresh/only-export-components
 export const setGlobalEngineState = (state: any) => {
   globalEngineState = state;
 };
@@ -14,13 +15,12 @@ function App() {
   const [selectedComponent, setSelectedComponent] = useState<any>(null);
   const [componentCount, setComponentCount] = useState(1);
 
-  const [boardConfig, setBoardConfig] = useState({
+  const [boardConfig] = useState({
     width: 100,
     height: 80,
     thickness: 1.6,
   });
 
-  // ✅ Subscribe to engine selection
   useEngine(mountRef, (selection) => {
     setSelectedComponent(selection);
     if (globalEngineState) {

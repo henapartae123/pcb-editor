@@ -16,7 +16,7 @@ interface SidebarProps {
     thickness: number;
   };
   onExport?: () => void;
-  // onClear?: () => void;
+  onClear?: () => void;
   // onLoad?: () => void;
 }
 
@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   componentCount = 120,
   boardConfig = { width: 100, height: 80, thickness: 1.6 },
   onExport = () => {},
-  // onClear = () => {},
+  onClear = () => {},
   // onLoad = () => {},
 }) => {
   const calculateArea = (): number => {
@@ -206,7 +206,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div style={{ marginBottom: "4px" }}>
                 <span style={{ opacity: 0.7 }}>Position:</span>{" "}
                 <span style={{ color: "#fff" }}>
-                  ({pos.x.toFixed(2)}, {pos.z.toFixed(2)})
+                  ({pos[0].toFixed(2)}, {pos[2].toFixed(2)})
                 </span>
               </div>
             )}
@@ -319,7 +319,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           📤 Load JSON
         </button> */}
 
-        {/* <button
+        <button
           onClick={onClear}
           style={{
             padding: "12px",
@@ -342,7 +342,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           🗑️ Clear Board
-        </button> */}
+        </button>
       </div>
     </div>
   );
