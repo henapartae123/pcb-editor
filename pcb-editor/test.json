@@ -1,0 +1,41 @@
+{
+  "board": {
+    "width": 100,
+    "height": 80,
+    "thickness": 1.6
+  },
+  "components": [
+    {
+      "id": "pad_1",
+      "type": "smd_rect",
+      "pos": [10, 0.01, 15],
+      "size": [2, 4],
+      "layer": "top"
+    },
+    {
+      "id": "pad_2",
+      "type": "smd_rect",
+      "pos": [20, 0.01, 15],
+      "size": [2, 4],
+      "layer": "top"
+    },
+    {
+      "id": "pad_3",
+      "type": "smd_rect",
+      "pos": [-15, -0.01, -10],
+      "size": [3, 3],
+      "layer": "bottom"
+    },
+    {
+      "id": "trace_1",
+      "type": "path",
+      "points": [
+        [10, 15],
+        [15, 20],
+        [20, 15]
+      ],
+      "width": 0.6,
+      "layer": "top"
+    }
+  ]
+}

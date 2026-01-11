@@ -1,9 +1,9 @@
 -Engine & Architecture
     --Initialize Three.js manually inside React (useEffect + useRef) #
 
-    --Single requestAnimationFrame render loop
+    --Single requestAnimationFrame render loop #
 
-    --Centralized Engine module (Engine.ts)
+    --Centralized Engine module (Engine.ts) #
 
     --Proper resize handling
 
@@ -13,29 +13,29 @@
 
         -- .dispose() materials
 
-        -- renderer.dispose()
+        -- renderer.dispose() #
 
         -- Scene object removal
 
 -Board & Layering
 
-    --Parametric PCB Board (BoxGeometry)
+    --Parametric PCB Board (BoxGeometry) #
 
-    --Layer system (Top / Bottom Copper)
+    --Layer system (Top / Bottom Copper) #
 
-    --Z-fighting mitigation:
+    --Z-fighting mitigation: #
 
-    --polygonOffset OR
+    --polygonOffset OR #
 
-    --deterministic Z-spacing
+    --deterministic Z-spacing #
 
 -PCB Primitives
 
-    --InstancedMesh for SMD pads (100+)
+    --InstancedMesh for SMD pads (100+) #
 
-    --Rectangular + circular pad support
+    --Rectangular + circular pad support #
 
-    --Through-hole cylinders
+    --Through-hole cylinders #
 
     --Traces as flat manifold geometry
 
