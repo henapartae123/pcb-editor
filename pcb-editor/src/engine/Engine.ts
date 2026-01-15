@@ -11,25 +11,28 @@ import { disposeObject } from "./Dispose";
 
 import { createBoard } from "../pcb/Board";
 import { createThroughHole } from "../pcb/Holes";
-import { createManhattanTrace } from "../pcb/Traces";
+import { createDynamicTrace } from "../pcb/Traces";
 import { setGlobalEngineState } from "../App";
 import { createCopperMaterial } from "../shaders/createCopperMaterial";
 
 const BOARD = { w: 100, h: 80, t: 1.6 };
+const LAYERS = { TOP: 0.035 };
+const GRID = 1.25;
 
-const LAYERS = {
-  TOP: 0.035,
-};
+const snap = (v: number) => Math.round(v / GRID) * GRID;
 
-const ROUTING = {
-  grid: 1.25,
-  width: 0.55,
-};
-
-const snap = (v: number) => Math.round(v / ROUTING.grid) * ROUTING.grid;
-
-// 🔑 RELATIVE SNAP (prevents mirroring)
-const snapRelative = (v: number) => snap(v + BOARD.w) - BOARD.w;
+/* ---------- BARYCENTRIC ---------- */
+function applyBarycentric(geometry: THREE.BufferGeometry) {
+  const count = geometry.attributes.position.count;
+  const bary: number[] = [];
+  for (let i = 0; i < count; i += 3) {
+    bary.push(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  }
+  geometry.setAttribute(
+    "barycentric",
+    new THREE.Float32BufferAttribute(bary, 3)
+  );
+}
 
 export function useEngine(
   containerRef: React.RefObject<HTMLDivElement | null>,
@@ -39,7 +42,6 @@ export function useEngine(
 
   useEffect(() => {
     if (!containerRef.current || engineRef.current) return;
-
     const container = containerRef.current;
 
     /* ---------- CORE ---------- */
@@ -64,168 +66,185 @@ export function useEngine(
     board.mesh.position.y = -BOARD.t / 2;
     scene.add(board.mesh);
 
-    /* ---------- PADS ---------- */
-    const padMat = createCopperMaterial();
+    /* ---------- FACTORIES ---------- */
 
-    const pads: THREE.Mesh[] = [];
+    const register = (root: THREE.Object3D, type: string) => {
+      selectable.push(root);
+      components.set(root.uuid, { id: root.uuid, type, mesh: root });
+    };
 
-    for (let i = 0; i < 12; i++) {
-      const pad = new THREE.Mesh(new THREE.BoxGeometry(4, 0.04, 2), padMat);
+    const createPad = (x = 0, z = 0) => {
+      const geo = new THREE.BoxGeometry(4, 0.04, 2);
+      applyBarycentric(geo);
 
-      pad.position.set(
-        snapRelative(-BOARD.w / 2 + 6),
-        LAYERS.TOP,
-        snapRelative(-BOARD.h / 2 + 10 + i * 5)
-      );
+      const mat = createCopperMaterial();
+      const pad = new THREE.Mesh(geo, mat);
+      pad.position.set(snap(x), LAYERS.TOP, snap(z));
 
       scene.add(pad);
-      pads.push(pad);
-      selectable.push(pad);
+      register(pad, "pad");
+      return pad;
+    };
 
-      components.set(pad.uuid, {
-        id: pad.uuid,
-        type: "pad",
-        mesh: pad,
-      });
-    }
-
-    /* ---------- HOLES ---------- */
-    const holes: THREE.Group[] = [];
-
-    pads.forEach((pad, i) => {
+    const createHole = (x = 0, z = 0) => {
       const hole = createThroughHole({
-        id: `hole-${i}`,
-        x: snapRelative(12),
-        z: pad.position.z,
+        id: `hole-${crypto.randomUUID()}`,
+        x: snap(x),
+        z: snap(z),
         radius: 0.8,
         ringWidth: 1.3,
         thickness: BOARD.t,
       });
 
-      hole.mesh.position.y = 0;
+      hole.mesh.traverse((o: any) => {
+        if (!o.isMesh) return;
+        applyBarycentric(o.geometry);
+        if (o.material?.uniforms) {
+          o.material.uniforms.uHovered.value = 0;
+          o.material.uniforms.uSelected.value = 0;
+        }
+      });
+
       scene.add(hole.mesh);
-
-      holes.push(hole.mesh);
-      selectable.push(hole.mesh);
-
-      components.set(hole.mesh.uuid, {
-        id: `hole-${i}`,
-        type: "hole",
-        mesh: hole.mesh,
-      });
-    });
-
-    /* ---------- ROUTING ---------- */
-    const traces: THREE.Mesh[] = [];
-
-    const clearTraces = () => {
-      traces.forEach((t) => {
-        scene.remove(t);
-        disposeObject(t);
-      });
-      traces.length = 0;
+      register(hole.mesh, "hole");
+      return hole.mesh;
     };
 
-    const routePadToHole = (
-      pad: THREE.Mesh,
-      hole: THREE.Group
-    ): [number, number][] => {
-      const px = snapRelative(pad.position.x);
-      const pz = snapRelative(pad.position.z);
-      const hx = snapRelative(hole.position.x);
-      const hz = snapRelative(hole.position.z);
+    const createTrace = (start: THREE.Vector3, end: THREE.Vector3) => {
+      const x1 = snap(start.x);
+      const z1 = snap(start.z);
+      const x2 = snap(end.x);
+      const z2 = snap(end.z);
 
-      const dx = hx - px;
-      const dz = hz - pz;
+      // Avoid zero length
+      if (x1 === x2 && z1 === z2) return;
 
-      const path: [number, number][] = [];
-      path.push([px, pz]);
+      const path: [number, number][] = [[x1, z1]];
 
-      // 🔑 deterministic bend (NO MIRROR)
-      if (Math.abs(dx) >= Math.abs(dz)) {
-        path.push([hx, pz]);
+      const dx = Math.abs(x2 - x1);
+      const dz = Math.abs(z2 - z1);
+
+      // Choose bend direction (Manhattan routing)
+      if (dx > dz) {
+        // horizontal first, then vertical
+        path.push([x2, z1]);
       } else {
-        path.push([px, hz]);
+        // vertical first, then horizontal
+        path.push([x1, z2]);
       }
 
-      path.push([hx, hz]);
-      return path;
-    };
+      path.push([x2, z2]);
 
-    const routeAll = () => {
-      clearTraces();
-
-      pads.forEach((pad, i) => {
-        const hole = holes[i];
-        if (!hole) return;
-
-        const path = routePadToHole(pad, hole);
-
-        const { mesh } = createManhattanTrace({
-          path,
-          width: ROUTING.width,
-          y: LAYERS.TOP + 0.002,
-        });
-
-        scene.add(mesh);
-        traces.push(mesh);
+      const { mesh } = createDynamicTrace({
+        path,
+        width: 0.55,
+        y: LAYERS.TOP + 0.002,
       });
+
+      applyBarycentric(mesh.geometry);
+      scene.add(mesh);
+      register(mesh, "trace");
+
+      return mesh;
     };
 
-    routeAll();
+    /* ---------- TRACE MODE ---------- */
+    let traceStart: THREE.Vector3 | null = null;
+    let traceActive = false;
 
-    /* ---------- TRANSFORM CONTROLS ---------- */
+    const startTrace = () => {
+      traceActive = true;
+      traceStart = null;
+    };
+
+    const stopTrace = () => {
+      traceActive = false;
+      traceStart = null;
+    };
+
+    /* ---------- TRANSFORM ---------- */
     const transform = new TransformControls(camera, renderer.domElement);
     transform.setMode("translate");
+    transform.showY = false;
     scene.add(transform);
 
-    // Listen to object moves and update routing
-    (transform as any).addEventListener("objectChange", () => {
-      const obj = (transform as any).object as THREE.Object3D | null;
+    transform.addEventListener("objectChange", () => {
+      const obj = transform.object;
       if (!obj) return;
-
-      // Snap Y to layer
-      obj.position.y = LAYERS.TOP;
-
-      // Snap X and Z to routing grid
       obj.position.x = snap(obj.position.x);
       obj.position.z = snap(obj.position.z);
-
-      // Recalculate all routing traces
-      routeAll();
-
-      // Update selection callback
-      if (onSelectionChange) {
-        const c = components.get(obj.uuid);
-        onSelectionChange(c || null);
-      }
+      obj.position.y = LAYERS.TOP;
+      onSelectionChange?.(components.get(obj.uuid));
     });
 
-    /* ---------- PICKING --c-------- */
-    const updateMouse = (e: MouseEvent) => {
+    /* ---------- INTERACTION ---------- */
+    let hovered: THREE.Object3D | null = null;
+
+    const setUniform = (root: THREE.Object3D, key: string, v: number) => {
+      root.traverse((o: any) => {
+        if (o.material?.uniforms?.[key]) {
+          o.material.uniforms[key].value = v;
+        }
+      });
+    };
+
+    renderer.domElement.addEventListener("mousemove", (e) => {
       const r = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
       mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
-    };
 
-    renderer.domElement.addEventListener("click", (e) => {
-      updateMouse(e);
       raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(selectable, true);
+      const hit =
+        raycaster.intersectObjects(selectable, true)[0]?.object || null;
 
-      if (!hits.length) {
+      let root = hit;
+      while (root && !components.has(root.uuid) && root.parent) {
+        root = root.parent;
+      }
+
+      if (hovered && hovered !== root) {
+        setUniform(hovered, "uHovered", 0);
+        hovered = null;
+      }
+
+      if (root && root !== hovered) {
+        hovered = root;
+        setUniform(root, "uHovered", 1);
+        renderer.domElement.style.cursor = "pointer";
+      } else if (!root) {
+        renderer.domElement.style.cursor = "default";
+      }
+    });
+
+    renderer.domElement.addEventListener("click", () => {
+      /** ✅ SAFETY GUARD */
+      if (traceActive && !hovered) return;
+
+      if (traceActive && hovered) {
+        const pos = hovered.position.clone();
+
+        if (!traceStart) {
+          traceStart = pos;
+        } else {
+          createTrace(traceStart, pos);
+
+          traceStart = null;
+          traceActive = false;
+        }
+        return;
+      }
+
+      components.forEach((c) => setUniform(c.mesh, "uSelected", 0));
+
+      if (!hovered) {
         transform.detach();
         onSelectionChange?.(null);
         return;
       }
 
-      let obj = hits[0].object;
-      while (obj.parent && !selectable.includes(obj)) {
-        obj = obj.parent;
-      }
-
-      transform.attach(obj);
-      onSelectionChange?.(components.get(obj.uuid));
+      setUniform(hovered, "uSelected", 1);
+      transform.attach(hovered);
+      onSelectionChange?.(components.get(hovered.uuid));
     });
 
     renderer.domElement.addEventListener("wheel", (e) => {
@@ -239,31 +258,37 @@ export function useEngine(
     let raf = 0;
     const animate = () => {
       raf = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
       const t = performance.now() * 0.001;
-      components.forEach((c) => {
-        if (c.mesh.material?.uniforms?.uTime) {
-          c.mesh.material.uniforms.uTime.value = t;
-        }
-      });
+      components.forEach((c) =>
+        c.mesh.traverse(
+          (o: any) =>
+            o.material?.uniforms?.uTime && (o.material.uniforms.uTime.value = t)
+        )
+      );
+      renderer.render(scene, camera);
     };
     animate();
 
+    /* ---------- EXPOSE API ---------- */
     engineRef.current = {
       scene,
       camera,
       renderer,
       components,
-      traces,
-      pads,
-      holes,
+      api: {
+        addPad: () => createPad(),
+        addHole: () => createHole(),
+        startTrace,
+        stopTrace,
+      },
     };
+
     setGlobalEngineState(engineRef.current);
 
     return () => {
       cancelAnimationFrame(raf);
       transform.dispose();
-      components.forEach((c) => c.mesh && disposeObject(c.mesh));
+      components.forEach((c) => disposeObject(c.mesh));
       renderer.dispose();
       container.removeChild(renderer.domElement);
       engineRef.current = null;

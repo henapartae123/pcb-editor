@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { createCopperMaterial } from "../shaders/createCopperMaterial";
+import { applyBarycentric } from "../utils/barycentric";
 
 interface ThroughHoleConfig {
   id: string;
@@ -23,11 +24,7 @@ export function createThroughHole(config: ThroughHoleConfig) {
     false // open ended
   );
 
-  const drillMat = new THREE.MeshStandardMaterial({
-    color: 0x111111,
-    roughness: 0.9,
-    metalness: 0,
-  });
+  const drillMat = createCopperMaterial();
 
   const drill = new THREE.Mesh(drillGeo, drillMat);
   // CylinderGeometry is oriented along Y axis by default
@@ -38,8 +35,10 @@ export function createThroughHole(config: ThroughHoleConfig) {
   const ringGeo = new THREE.RingGeometry(
     config.radius,
     config.radius + ringWidth,
-    48 // segments for smooth circle
-  );
+    48
+  ).toNonIndexed();
+
+  applyBarycentric(ringGeo);
 
   const ringMat = createCopperMaterial();
 

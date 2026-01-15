@@ -13,6 +13,7 @@ export const setGlobalEngineState = (state: any) => {
 
 function App() {
   const mountRef = useRef<HTMLDivElement>(null);
+
   const [selectedComponent, setSelectedComponent] = useState<any>(null);
   const [componentCount, setComponentCount] = useState(0);
   const [boardConfig, setBoardConfig] = useState({
@@ -21,21 +22,41 @@ function App() {
     thickness: 1.6,
   });
 
+  /* ---------- ENGINE ---------- */
   useEngine(mountRef, (selection) => {
     setSelectedComponent(selection);
-    if (globalEngineState) {
+    if (globalEngineState?.components) {
       setComponentCount(globalEngineState.components.size);
     }
   });
 
-  // --- Export ---
+  /* ---------- SIDEBAR ACTIONS ---------- */
+  const handleAddPad = () => {
+    globalEngineState?.api?.addPad?.();
+    setComponentCount(globalEngineState?.components.size ?? 0);
+  };
+
+  const handleAddHole = () => {
+    globalEngineState?.api?.addHole?.();
+    setComponentCount(globalEngineState?.components.size ?? 0);
+  };
+
+  const handleStartTrace = () => {
+    globalEngineState?.api?.startTrace?.();
+  };
+
+  const handleStopTrace = () => {
+    globalEngineState?.api?.stopTrace?.();
+  };
+
+  /* ---------- EXPORT ---------- */
   const handleExport = () => {
     if (!globalEngineState) return;
     const json = exportPCB(globalEngineState, boardConfig);
     downloadPCB(json);
   };
 
-  // --- Load ---
+  /* ---------- LOAD ---------- */
   const handleLoad = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -58,11 +79,10 @@ function App() {
     input.click();
   };
 
-  // --- Clear ---
+  /* ---------- CLEAR ---------- */
   const handleClear = () => {
     if (!globalEngineState) return;
 
-    // Dispose all component meshes
     globalEngineState.components.forEach((comp: any) => {
       if (comp.mesh) {
         globalEngineState.scene.remove(comp.mesh);
@@ -77,7 +97,6 @@ function App() {
 
     globalEngineState.components.clear();
 
-    // Dispose traces if stored
     if (globalEngineState.traces) {
       globalEngineState.traces.forEach((t: any) => {
         globalEngineState.scene.remove(t);
@@ -98,10 +117,14 @@ function App() {
   return (
     <>
       <div ref={mountRef} style={{ width: "100vw", height: "100vh" }} />
+
       <Sidebar
         selectedComponent={selectedComponent}
         componentCount={componentCount}
         boardConfig={boardConfig}
+        onAddPad={handleAddPad}
+        onAddHole={handleAddHole}
+        onAddTrace={handleStartTrace}
         onExport={handleExport}
         onLoad={handleLoad}
         onClear={handleClear}

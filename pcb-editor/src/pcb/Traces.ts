@@ -1,17 +1,16 @@
 import * as THREE from "three";
 import { createCopperMaterial } from "../shaders/createCopperMaterial";
 
-interface ManhattanTraceConfig {
-  path: [number, number][]; // XY pairs on PCB plane
+interface DynamicTraceConfig {
+  path: [number, number][]; // [x,z] points
   width: number;
-  y?: number; // Y position (height)
+  y: number;
 }
 
-export function createManhattanTrace(config: ManhattanTraceConfig) {
-  const { path, width } = config;
-  const halfWidth = width / 2;
+export function createDynamicTrace(config: DynamicTraceConfig) {
+  const { path, width, y } = config;
+  const half = width / 2;
 
-  // Create the trace geometry using lines with rectangular cross-section
   const shapes: THREE.Shape[] = [];
 
   for (let i = 0; i < path.length - 1; i++) {
@@ -20,116 +19,97 @@ export function createManhattanTrace(config: ManhattanTraceConfig) {
 
     const shape = new THREE.Shape();
 
-    // Determine if this is a horizontal or vertical segment
-    const isHorizontal = Math.abs(z2 - z1) < 0.001;
-    const isVertical = Math.abs(x2 - x1) < 0.001;
+    const horizontal = Math.abs(z2 - z1) < 0.0001;
+    const vertical = Math.abs(x2 - x1) < 0.0001;
 
-    if (isHorizontal) {
-      // Horizontal segment
-      const xMin = Math.min(x1, x2);
-      const xMax = Math.max(x1, x2);
+    if (horizontal) {
+      const minX = Math.min(x1, x2);
+      const maxX = Math.max(x1, x2);
 
-      shape.moveTo(xMin, z1 - halfWidth);
-      shape.lineTo(xMax, z1 - halfWidth);
-      shape.lineTo(xMax, z1 + halfWidth);
-      shape.lineTo(xMin, z1 + halfWidth);
-      shape.lineTo(xMin, z1 - halfWidth);
-    } else if (isVertical) {
-      // Vertical segment
-      const zMin = Math.min(z1, z2);
-      const zMax = Math.max(z1, z2);
+      shape.moveTo(minX, z1 - half);
+      shape.lineTo(maxX, z1 - half);
+      shape.lineTo(maxX, z1 + half);
+      shape.lineTo(minX, z1 + half);
+      shape.lineTo(minX, z1 - half);
+    } else if (vertical) {
+      const minZ = Math.min(z1, z2);
+      const maxZ = Math.max(z1, z2);
 
-      shape.moveTo(x1 - halfWidth, zMin);
-      shape.lineTo(x1 + halfWidth, zMin);
-      shape.lineTo(x1 + halfWidth, zMax);
-      shape.lineTo(x1 - halfWidth, zMax);
-      shape.lineTo(x1 - halfWidth, zMin);
+      shape.moveTo(x1 - half, minZ);
+      shape.lineTo(x1 + half, minZ);
+      shape.lineTo(x1 + half, maxZ);
+      shape.lineTo(x1 - half, maxZ);
+      shape.lineTo(x1 - half, minZ);
     } else {
-      // Diagonal segment (shouldn't happen in Manhattan routing, but handle it)
-      const angle = Math.atan2(z2 - z1, x2 - x1);
-      const perpAngle = angle + Math.PI / 2;
-
-      const dx = Math.cos(perpAngle) * halfWidth;
-      const dz = Math.sin(perpAngle) * halfWidth;
-
-      shape.moveTo(x1 - dx, z1 - dz);
-      shape.lineTo(x2 - dx, z2 - dz);
-      shape.lineTo(x2 + dx, z2 + dz);
-      shape.lineTo(x1 + dx, z1 + dz);
-      shape.lineTo(x1 - dx, z1 - dz);
+      // Safety fallback (should never happen in Manhattan routing)
+      continue;
     }
 
     shapes.push(shape);
   }
 
-  // Combine all shapes into one geometry
-  const geometries: THREE.ShapeGeometry[] = [];
+  // Convert shapes to geometries
+  const geometries: THREE.BufferGeometry[] = [];
 
   shapes.forEach((shape) => {
     const geo = new THREE.ShapeGeometry(shape);
-    geo.rotateX(-Math.PI / 2); // Lay flat on XZ plane
+    geo.rotateX(-Math.PI / 2); // lay flat on XZ plane
     geometries.push(geo);
   });
 
-  // Merge all geometries
-  const mergedGeo = new THREE.BufferGeometry();
+  // Merge geometries manually
+  const merged = new THREE.BufferGeometry();
+
   const positions: number[] = [];
-  const indices: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
+  const indices: number[] = [];
 
   let indexOffset = 0;
 
   geometries.forEach((geo) => {
-    const posAttr = geo.getAttribute("position");
-    const normalAttr = geo.getAttribute("normal");
-    const uvAttr = geo.getAttribute("uv");
-    const indexAttr = geo.getIndex();
+    const pos = geo.getAttribute("position");
+    const norm = geo.getAttribute("normal");
+    const uv = geo.getAttribute("uv");
+    const idx = geo.getIndex();
 
-    // Add positions
-    for (let i = 0; i < posAttr.count; i++) {
-      positions.push(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+    for (let i = 0; i < pos.count; i++) {
+      positions.push(pos.getX(i), pos.getY(i), pos.getZ(i));
     }
 
-    // Add normals
-    for (let i = 0; i < normalAttr.count; i++) {
-      normals.push(normalAttr.getX(i), normalAttr.getY(i), normalAttr.getZ(i));
+    for (let i = 0; i < norm.count; i++) {
+      normals.push(norm.getX(i), norm.getY(i), norm.getZ(i));
     }
 
-    // Add UVs
-    for (let i = 0; i < uvAttr.count; i++) {
-      uvs.push(uvAttr.getX(i), uvAttr.getY(i));
+    for (let i = 0; i < uv.count; i++) {
+      uvs.push(uv.getX(i), uv.getY(i));
     }
 
-    // Add indices with offset
-    if (indexAttr) {
-      for (let i = 0; i < indexAttr.count; i++) {
-        indices.push(indexAttr.getX(i) + indexOffset);
+    if (idx) {
+      for (let i = 0; i < idx.count; i++) {
+        indices.push(idx.getX(i) + indexOffset);
       }
     }
 
-    indexOffset += posAttr.count;
+    indexOffset += pos.count;
   });
 
-  mergedGeo.setAttribute(
+  merged.setAttribute(
     "position",
     new THREE.Float32BufferAttribute(positions, 3)
   );
-  mergedGeo.setAttribute(
-    "normal",
-    new THREE.Float32BufferAttribute(normals, 3)
-  );
-  mergedGeo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  mergedGeo.setIndex(indices);
+  merged.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+  merged.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  merged.setIndex(indices);
+  merged.computeBoundingSphere();
 
-  const mat = createCopperMaterial();
-
-  const mesh = new THREE.Mesh(mergedGeo, mat);
-  mesh.position.y = config.y ?? 0.03;
+  const material = createCopperMaterial();
+  const mesh = new THREE.Mesh(merged, material);
+  mesh.position.y = y;
 
   mesh.userData = {
     type: "trace",
-    path: config.path,
+    path,
   };
 
   return { mesh };
