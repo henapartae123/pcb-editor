@@ -45,9 +45,9 @@ function App() {
     globalEngineState?.api?.startTrace?.();
   };
 
-  const handleStopTrace = () => {
-    globalEngineState?.api?.stopTrace?.();
-  };
+  // const handleStopTrace = () => {
+  //   globalEngineState?.api?.stopTrace?.();
+  // };
 
   /* ---------- EXPORT ---------- */
   const handleExport = () => {

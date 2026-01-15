@@ -163,17 +163,24 @@ export function useEngine(
     };
 
     /* ---------- TRANSFORM ---------- */
-    const transform = new TransformControls(camera, renderer.domElement);
+    const transform = new TransformControls(camera, renderer.domElement) as any;
+
     transform.setMode("translate");
+
+    // Hide Y axis safely
     transform.showY = false;
+
     scene.add(transform);
 
-    transform.addEventListener("objectChange", () => {
-      const obj = transform.object;
+    // TypeScript-safe event binding
+    transform.addEventListener("objectChange" as any, () => {
+      const obj = transform.object as THREE.Object3D | null;
       if (!obj) return;
+
       obj.position.x = snap(obj.position.x);
       obj.position.z = snap(obj.position.z);
       obj.position.y = LAYERS.TOP;
+
       onSelectionChange?.(components.get(obj.uuid));
     });
 
